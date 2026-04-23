@@ -1,0 +1,76 @@
+// Reference schema only.
+// Runtime persistence in this project uses direct SQL via better-sqlite3 (see lib/database.ts).
+// This file documents equivalent entities for teams that prefer schema review in PRs.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./local-seo-rank-tracker.sqlite"
+}
+
+model Purchase {
+  email             String  @id
+  status            String  @default("active")
+  customerId        String? @map("customer_id")
+  checkoutSessionId String? @map("checkout_session_id")
+  lastEventId       String? @map("last_event_id")
+  updatedAt         String  @map("updated_at")
+
+  @@map("purchases")
+}
+
+model Business {
+  id         String   @id
+  ownerEmail String   @unique @map("owner_email")
+  name       String
+  gmbName    String   @map("gmb_name")
+  website    String?
+  primaryCity String  @map("primary_city")
+  createdAt  String   @map("created_at")
+  updatedAt  String   @map("updated_at")
+  keywords   Keyword[]
+  checks     RankingCheck[]
+
+  @@map("businesses")
+}
+
+model Keyword {
+  id           String   @id
+  businessId   String   @map("business_id")
+  keyword      String
+  neighborhood String
+  createdAt    String   @map("created_at")
+  business     Business @relation(fields: [businessId], references: [id])
+
+  @@unique([businessId, keyword, neighborhood])
+  @@map("keywords")
+}
+
+model RankingCheck {
+  id        String          @id
+  businessId String         @map("business_id")
+  checkedAt String          @map("checked_at")
+  source    String
+  business  Business        @relation(fields: [businessId], references: [id])
+  results   RankingResult[]
+
+  @@map("ranking_checks")
+}
+
+model RankingResult {
+  id             String      @id
+  checkId        String      @map("check_id")
+  keywordId      String      @map("keyword_id")
+  keyword        String
+  neighborhood   String
+  targetPosition Int?        @map("target_position")
+  visibilityScore Float      @map("visibility_score")
+  competitorsJson String     @map("competitors_json")
+  createdAt      String      @map("created_at")
+  check          RankingCheck @relation(fields: [checkId], references: [id])
+
+  @@map("ranking_results")
+}
