@@ -11,22 +11,23 @@ NICHE: local-business
 PRICE: $$15/mo
 
 ARCHITECTURE SPEC:
-A Next.js web app that scrapes Google search results for local keywords, tracks ranking positions for Google My Business listings, and sends automated weekly reports. Uses a job queue for scheduled ranking checks and stores historical data for trend analysis.
+A Next.js web app that scrapes Google Maps search results for local keywords, stores ranking data in a database, and sends automated weekly reports via email. Uses a job queue for scheduled ranking checks and competitor analysis across multiple locations.
 
 PLANNED FILES:
 - app/page.tsx
 - app/dashboard/page.tsx
 - app/api/rankings/route.ts
-- app/api/webhooks/lemon-squeezy/route.ts
-- app/api/cron/check-rankings/route.ts
-- components/ranking-chart.tsx
-- components/competitor-table.tsx
-- lib/google-scraper.ts
-- lib/email-service.ts
+- app/api/webhooks/lemonsqueezy/route.ts
+- lib/scraper.ts
 - lib/database.ts
+- lib/email.ts
+- lib/queue.ts
+- components/RankingChart.tsx
+- components/CompetitorTable.tsx
+- components/LocationSelector.tsx
 - prisma/schema.prisma
 
-DEPENDENCIES: next, tailwindcss, prisma, @prisma/client, puppeteer, cheerio, nodemailer, @lemonsqueezy/lemonsqueezy.js, recharts, cron, zod
+DEPENDENCIES: next, tailwindcss, prisma, @prisma/client, puppeteer, bullmq, redis, resend, recharts, @lemonsqueezy/lemonsqueezy.js, next-auth, zod
 
 REQUIREMENTS:
 - Next.js 15 with App Router (app/ directory)

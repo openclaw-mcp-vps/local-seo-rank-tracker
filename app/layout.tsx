@@ -1,59 +1,59 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
-
+import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
-  variable: "--font-sans",
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
-  display: "swap"
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
+const jetBrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap"
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://localseotracker.app"),
-  title: "Local SEO Rank Tracker | Track Neighborhood Rankings for Small Businesses",
+  metadataBase: new URL("https://localseoranktracker.com"),
+  title: {
+    default: "Local SEO Rank Tracker",
+    template: "%s | Local SEO Rank Tracker",
+  },
   description:
-    "Track Google local rankings neighborhood-by-neighborhood, monitor competitors, and send weekly SEO reports without enterprise pricing.",
+    "Track Google Maps rankings for every neighborhood you serve. Local SEO Rank Tracker shows your position, top competitors, and weekly wins in one dashboard.",
+  keywords: [
+    "local SEO tracker",
+    "Google Maps ranking tracker",
+    "near me SEO tool",
+    "small business local SEO",
+    "local competitor analysis",
+  ],
   openGraph: {
     title: "Local SEO Rank Tracker",
     description:
-      "Monitor where your business appears in local search and get weekly competitor analysis for every neighborhood you serve.",
-    url: "https://localseotracker.app",
+      "Monitor local keyword rankings across neighborhoods and get weekly competitor analysis reports.",
+    type: "website",
+    url: "https://localseoranktracker.com",
     siteName: "Local SEO Rank Tracker",
-    type: "website"
   },
   twitter: {
     card: "summary_large_image",
     title: "Local SEO Rank Tracker",
     description:
-      "Affordable local ranking intelligence for small businesses and agencies."
+      "Find out exactly where your business ranks in Google Maps and beat local competitors.",
   },
-  keywords: [
-    "local SEO tracker",
-    "google my business rankings",
-    "near me seo",
-    "local keyword tracking",
-    "competitor analysis"
-  ]
 };
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-[#0d1117]">
-      <body
-        className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} min-h-screen bg-[#0d1117] text-slate-100 antialiased`}
-      >
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} dark h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col bg-[#0d1117] text-slate-100">
         {children}
       </body>
     </html>

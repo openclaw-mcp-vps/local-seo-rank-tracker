@@ -1,102 +1,86 @@
-import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { ACCESS_COOKIE_NAME, getAuthenticatedEmailFromToken } from "@/lib/access";
-import {
-  getBusinessByOwnerEmail,
-  getRecentRankingChecks,
-  getTrendPoints,
-  listKeywordsForBusiness,
-  replaceKeywordsForBusiness,
-  saveBusinessProfile
-} from "@/lib/database";
-import { runRankingChecksForOwner } from "@/lib/ranking-service";
+import { getAccessCookieName, readEmailFromAccessToken } from "@/lib/access";
+import { getDashboardKeywords } from "@/lib/database";
+import { enqueueRankingCheck, ensureQueueInfrastructure } from "@/lib/queue";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
-const rankingConfigSchema = z.object({
-  businessName: z.string().min(2),
-  gmbName: z.string().min(2),
-  website: z.string().trim().optional(),
-  primaryCity: z.string().min(2),
-  keywords: z
-    .array(
-      z.object({
-        keyword: z.string().min(2),
-        neighborhood: z.string().min(2)
-      })
-    )
-    .min(1),
-  runCheckNow: z.boolean().optional()
+const rankingRequestSchema = z.object({
+  keyword: z.string().trim().min(2).max(120),
+  trackedBusiness: z.string().trim().min(2).max(140),
+  location: z.object({
+    name: z.string().trim().min(2).max(120),
+    lat: z.number().gte(-90).lte(90),
+    lng: z.number().gte(-180).lte(180),
+    radiusKm: z.number().gt(0).lte(50),
+  }),
 });
 
-function getAuthenticatedEmail(request: NextRequest): string | null {
-  const token = request.cookies.get(ACCESS_COOKIE_NAME)?.value;
-  return getAuthenticatedEmailFromToken(token);
+async function getAuthorizedEmail() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(getAccessCookieName())?.value;
+
+  return readEmailFromAccessToken(token);
 }
 
-export async function GET(request: NextRequest) {
-  const ownerEmail = getAuthenticatedEmail(request);
-  if (!ownerEmail) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+export async function GET() {
+  const email = await getAuthorizedEmail();
+
+  if (!email) {
+    return NextResponse.json(
+      {
+        error: "Access cookie is missing or invalid.",
+      },
+      { status: 401 },
+    );
   }
 
-  const business = getBusinessByOwnerEmail(ownerEmail);
-  if (!business) {
-    return NextResponse.json({
-      business: null,
-      keywords: [],
-      trend: [],
-      checks: []
-    });
-  }
+  await ensureQueueInfrastructure();
 
   return NextResponse.json({
-    business,
-    keywords: listKeywordsForBusiness(business.id),
-    trend: getTrendPoints(business.id, 16),
-    checks: getRecentRankingChecks(business.id, 8)
+    email,
+    keywords: getDashboardKeywords(email),
   });
 }
 
-export async function POST(request: NextRequest) {
-  const ownerEmail = getAuthenticatedEmail(request);
-  if (!ownerEmail) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+export async function POST(request: Request) {
+  const email = await getAuthorizedEmail();
+
+  if (!email) {
+    return NextResponse.json(
+      {
+        error: "Access cookie is missing or invalid.",
+      },
+      { status: 401 },
+    );
   }
 
-  const body = await request.json();
-  const parsed = rankingConfigSchema.safeParse(body);
+  const body = await request.json().catch(() => null);
+  const parsed = rankingRequestSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
       {
-        error: "invalid_payload",
-        details: parsed.error.flatten()
+        error: "Submit a keyword, tracked business name, and a valid location.",
+        issues: parsed.error.issues,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const business = saveBusinessProfile(ownerEmail, {
-    name: parsed.data.businessName,
-    gmbName: parsed.data.gmbName,
-    website: parsed.data.website,
-    primaryCity: parsed.data.primaryCity
+  const result = await enqueueRankingCheck({
+    ownerEmail: email,
+    keyword: parsed.data.keyword,
+    trackedBusiness: parsed.data.trackedBusiness,
+    location: parsed.data.location,
   });
 
-  replaceKeywordsForBusiness(business.id, parsed.data.keywords);
-
-  if (parsed.data.runCheckNow) {
-    await runRankingChecksForOwner(ownerEmail);
-  }
-
   return NextResponse.json({
-    success: true,
-    business,
-    keywords: listKeywordsForBusiness(business.id),
-    trend: getTrendPoints(business.id, 16),
-    checks: getRecentRankingChecks(business.id, 8)
+    email,
+    run: result,
+    keywords: getDashboardKeywords(email),
   });
 }

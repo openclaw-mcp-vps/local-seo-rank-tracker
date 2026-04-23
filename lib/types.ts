@@ -1,57 +1,47 @@
-export type KeywordRecord = {
-  id: string;
-  businessId: string;
-  keyword: string;
-  neighborhood: string;
-  createdAt: string;
+export type LocationInput = {
+  name: string;
+  lat: number;
+  lng: number;
+  radiusKm: number;
 };
 
-export type BusinessRecord = {
-  id: string;
-  ownerEmail: string;
+export type CompetitorResult = {
+  rank: number;
   name: string;
-  gmbName: string;
-  website: string | null;
-  primaryCity: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type CompetitorEntry = {
-  name: string;
-  url: string | null;
-  position: number;
   rating: number | null;
   reviewCount: number | null;
-  address: string | null;
-  isTarget: boolean;
+  address: string;
 };
 
-export type RankingResultInput = {
-  keywordId: string;
+export type RankingHistoryPoint = {
+  checkedAt: string;
+  rank: number | null;
+};
+
+export type DashboardKeyword = {
+  keywordId: number;
   keyword: string;
-  neighborhood: string;
-  targetPosition: number | null;
-  visibilityScore: number;
-  competitors: CompetitorEntry[];
+  trackedBusiness: string;
+  location: LocationInput;
+  latestRank: number | null;
+  previousRank: number | null;
+  checkedAt: string | null;
+  competitors: CompetitorResult[];
+  history: RankingHistoryPoint[];
 };
 
-export type RankingResultRecord = RankingResultInput & {
-  id: string;
-  checkId: string;
-  createdAt: string;
+export type RankingCheckRequest = {
+  keyword: string;
+  trackedBusiness: string;
+  location: LocationInput;
 };
 
-export type RankingCheckRecord = {
-  id: string;
-  businessId: string;
+export type RankingCheckResult = {
+  keywordId: number;
+  keyword: string;
+  trackedBusiness: string;
+  location: LocationInput;
   checkedAt: string;
-  source: string;
-  results: RankingResultRecord[];
-};
-
-export type TrendPoint = {
-  checkedAt: string;
-  averagePosition: number;
-  visibilityScore: number;
+  localPackRank: number | null;
+  competitors: CompetitorResult[];
 };
